@@ -31,47 +31,46 @@ URL = f"https://liveapi.yext.com/v2/accounts/me/answers/vertical/query?experienc
 
 response = get_results(URL)
 results = response["response"]["results"]
+filters = response["response"]["appliedQueryFilters"]
 
-if len(results) == 0:
+st.write(f"# {vertical_key}")
+
+filters_selected = st.multiselect(
+    "",
+    [f"{filter['displayKey']}: {filter['displayValue']}" for filter in filters],
+    default=[f"{filter['displayKey']}: {filter['displayValue']}" for filter in filters],
+)
+corresponding_filters = [
+    filter
+    for filter in filters
+    if f"{filter['displayKey']}: {filter['displayValue']}" in filters_selected
+]
+
+if corresponding_filters != filters:
+
+    removed_filters = [filter for filter in filters if filter not in corresponding_filters]
+    removed_filter_keys = [list(filter["filter"].keys()) for filter in removed_filters]
+    removed_filter_keys = flatten(removed_filter_keys)
+    removed_filter_keys = [k for k in removed_filter_keys if k != "type"]
+    facet_filters = ",".join([f'"{key}": []' for key in removed_filter_keys])
+
+    final_url = URL + f"&facetFilters={{{facet_filters}}}"
+else:
+    final_url = URL
+
+final_response = get_results(final_url)
+final_results = final_response["response"]["results"]
+result_count = final_response["response"]["resultsCount"]
+
+if len(final_results) == 0:
     st.write("_No results returned._")
 else:
-    filters = response["response"]["appliedQueryFilters"]
-    display_fields = st.sidebar.multiselect("Display Fields", results[0]["data"].keys())
-
-    st.write(f"# {vertical_key}")
-
-    filters_selected = st.multiselect(
-        "",
-        [f"{filter['displayKey']}: {filter['displayValue']}" for filter in filters],
-        default=[f"{filter['displayKey']}: {filter['displayValue']}" for filter in filters],
-    )
-    corresponding_filters = [
-        filter
-        for filter in filters
-        if f"{filter['displayKey']}: {filter['displayValue']}" in filters_selected
-    ]
-
-    if corresponding_filters != filters:
-
-        removed_filters = [filter for filter in filters if filter not in corresponding_filters]
-        removed_filter_keys = [list(filter["filter"].keys()) for filter in removed_filters]
-        removed_filter_keys = flatten(removed_filter_keys)
-        removed_filter_keys = [k for k in removed_filter_keys if k != "type"]
-        facet_filters = ",".join([f'"{key}": []' for key in removed_filter_keys])
-
-        final_url = URL + f"&facetFilters={{{facet_filters}}}"
-    else:
-        final_url = URL
-
-    final_response = get_results(final_url)
-    final_results = final_response["response"]["results"]
-    result_count = final_response["response"]["resultsCount"]
-
     if len(final_results) > 10:
         final_results = final_results[:10]
-
+    
     st.write(f"Results Count: {result_count}")
 
+    display_fields = st.sidebar.multiselect("Display Fields", results[0]["data"].keys())
     for result in final_results:
         st.write(f"## {result['data']['name']}")
         for field in display_fields:
