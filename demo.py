@@ -24,7 +24,7 @@ st.sidebar.write("# Search Experience Info")
 experience_key = st.sidebar.text_input("Experience Key", value="yext_help_site")
 api_key = st.sidebar.text_input("API Key", value="1c81e4de0ec0e8051bdf66c31fc26a45")
 vertical_key = st.sidebar.text_input("Vertical Key", value="guides")
-query = st.sidebar.text_input("Query", value="API guides")
+query = st.sidebar.text_input("Query", value="developer guides")
 query = encode_url(query)
 
 URL = f"https://liveapi.yext.com/v2/accounts/me/answers/vertical/query?experienceKey={experience_key}&api_key={api_key}&v=20190101&version=STAGING&locale=en&input={query}&verticalKey={vertical_key}"
