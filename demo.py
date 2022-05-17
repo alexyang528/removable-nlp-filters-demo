@@ -20,7 +20,8 @@ def get_results(URL):
     return requests.get(URL).json()
 
 
-st.sidebar.write("# Search Experience Info")
+st.sidebar.write("# Configuration")
+st.sidebar.write("### Search Experience Info")
 EXPERIENCE_KEY = st.sidebar.text_input("Experience Key", value="yext_help_site")
 API_KEY = st.sidebar.text_input("API Key", value="1c81e4de0ec0e8051bdf66c31fc26a45")
 QUERY = st.sidebar.text_input("Query", value="developer guides")
