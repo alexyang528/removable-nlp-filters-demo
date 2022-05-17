@@ -35,9 +35,6 @@ results = response["response"]["results"]
 if len(results) == 0:
     st.write("_No results returned._")
 else:
-    if len(results) > 10:
-        results = results[:10]
-
     filters = response["response"]["appliedQueryFilters"]
     display_fields = st.sidebar.multiselect("Display Fields", results[0]["data"].keys())
 
@@ -69,6 +66,9 @@ else:
     final_response = get_results(final_url)
     final_results = final_response["response"]["results"]
     result_count = final_response["response"]["resultsCount"]
+
+    if len(final_results) > 10:
+        final_results = final_results[:10]
 
     st.write(f"Results Count: {result_count}")
 
