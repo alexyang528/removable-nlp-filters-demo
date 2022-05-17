@@ -88,12 +88,6 @@ def write_vertical(vertical_key):
                     st.write(f"**{field}**: _None_")
             st.markdown("""---""")
 
-        with st.expander("API Request"):
-            st.code(final_url, language="html")
-
-        with st.expander("API Response"):
-            st.write(response)
-
 
 st.sidebar.write("### Display Fields:")
 for vertical_key in vertical_keys:
