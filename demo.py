@@ -21,67 +21,79 @@ def get_results(URL):
 
 
 st.sidebar.write("# Search Experience Info")
-experience_key = st.sidebar.text_input("Experience Key", value="yext_help_site")
-api_key = st.sidebar.text_input("API Key", value="1c81e4de0ec0e8051bdf66c31fc26a45")
-vertical_key = st.sidebar.text_input("Vertical Key", value="guides")
-query = st.sidebar.text_input("Query", value="developer guides")
-query = encode_url(query)
+EXPERIENCE_KEY = st.sidebar.text_input("Experience Key", value="yext_help_site")
+API_KEY = st.sidebar.text_input("API Key", value="1c81e4de0ec0e8051bdf66c31fc26a45")
+QUERY = st.sidebar.text_input("Query", value="developer guides")
+QUERY = encode_url(QUERY)
 
-URL = f"https://liveapi.yext.com/v2/accounts/me/answers/vertical/query?experienceKey={experience_key}&api_key={api_key}&v=20190101&version=STAGING&locale=en&input={query}&verticalKey={vertical_key}"
+UNIVERSAL_URL = f"https://liveapi.yext.com/v2/accounts/me/answers/query?experienceKey={EXPERIENCE_KEY}&api_key={API_KEY}&v=20190101&version=STAGING&locale=en&input={QUERY}"
+response = get_results(UNIVERSAL_URL)
+vertical_keys = [r["verticalConfigId"] for r in response["response"]["modules"]]
 
-response = get_results(URL)
-results = response["response"]["results"]
-filters = response["response"]["appliedQueryFilters"]
 
-st.write(f"# {vertical_key}")
+def write_vertical(vertical_key):
+    st.write(f"# {vertical_key}")
 
-filters_selected = st.multiselect(
-    "",
-    [f"{filter['displayKey']}: {filter['displayValue']}" for filter in filters],
-    default=[f"{filter['displayKey']}: {filter['displayValue']}" for filter in filters],
-)
-corresponding_filters = [
-    filter
-    for filter in filters
-    if f"{filter['displayKey']}: {filter['displayValue']}" in filters_selected
-]
+    vertical_url = f"https://liveapi.yext.com/v2/accounts/me/answers/vertical/query?experienceKey={EXPERIENCE_KEY}&api_key={API_KEY}&v=20190101&version=STAGING&locale=en&input={QUERY}&verticalKey={vertical_key}"
 
-if corresponding_filters != filters:
+    response = get_results(vertical_url)
+    results = response["response"]["results"]
+    filters = response["response"]["appliedQueryFilters"]
 
-    removed_filters = [filter for filter in filters if filter not in corresponding_filters]
-    removed_filter_keys = [list(filter["filter"].keys()) for filter in removed_filters]
-    removed_filter_keys = flatten(removed_filter_keys)
-    removed_filter_keys = [k for k in removed_filter_keys if k != "type"]
-    facet_filters = ",".join([f'"{key}": []' for key in removed_filter_keys])
+    filters_selected = st.multiselect(
+        f"Filters ({vertical_key})",
+        [f"{filter['displayKey']}: {filter['displayValue']}" for filter in filters],
+        default=[f"{filter['displayKey']}: {filter['displayValue']}" for filter in filters],
+    )
+    corresponding_filters = [
+        filter
+        for filter in filters
+        if f"{filter['displayKey']}: {filter['displayValue']}" in filters_selected
+    ]
 
-    final_url = URL + f"&facetFilters={{{facet_filters}}}"
-else:
-    final_url = URL
+    if corresponding_filters != filters:
 
-final_response = get_results(final_url)
-final_results = final_response["response"]["results"]
-result_count = final_response["response"]["resultsCount"]
+        removed_filters = [filter for filter in filters if filter not in corresponding_filters]
+        removed_filter_keys = [list(filter["filter"].keys()) for filter in removed_filters]
+        removed_filter_keys = flatten(removed_filter_keys)
+        removed_filter_keys = [k for k in removed_filter_keys if k != "type"]
+        facet_filters = ",".join([f'"{key}": []' for key in removed_filter_keys])
 
-if len(final_results) == 0:
-    st.write("_No results returned._")
-else:
-    if len(final_results) > 10:
-        final_results = final_results[:10]
-    
-    st.write(f"Results Count: {result_count}")
+        final_url = vertical_url + f"&facetFilters={{{facet_filters}}}"
+    else:
+        final_url = vertical_url
 
-    display_fields = st.sidebar.multiselect("Display Fields", results[0]["data"].keys())
-    for result in final_results:
-        st.write(f"## {result['data']['name']}")
-        for field in display_fields:
-            if field in result["data"]:
-                st.write(f"**{field}**: {result['data'][field]}")
-            else:
-                st.write(f"**{field}**: _None_")
-        st.markdown("""---""")
+    final_response = get_results(final_url)
+    final_results = final_response["response"]["results"]
+    result_count = final_response["response"]["resultsCount"]
 
-    with st.expander("API Request"):
-        st.write(final_url)
+    if len(final_results) == 0:
+        st.write("_No results returned._")
+    else:
+        if len(final_results) > 5:
+            final_results = final_results[:5]
 
-    with st.expander("API Response"):
-        st.write(response)
+        st.write(f"Results Count: {result_count}")
+
+        display_fields = st.sidebar.multiselect(
+            f"Display Fields ({vertical_key})", final_results[0]["data"].keys()
+        )
+        for result in final_results:
+            st.write(f"## {result['data']['name']}")
+            for field in display_fields:
+                if field in result["data"]:
+                    st.write(f"**{field}**: {result['data'][field]}")
+                else:
+                    st.write(f"**{field}**: _None_")
+            st.markdown("""---""")
+
+        with st.expander("API Request"):
+            st.code(final_url, language="html")
+
+        with st.expander("API Response"):
+            st.write(response)
+
+
+st.sidebar.write("### Display Fields:")
+for vertical_key in vertical_keys:
+    write_vertical(vertical_key)
